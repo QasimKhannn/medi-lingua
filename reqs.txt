@@ -1,0 +1,104 @@
+Here's a simplified and focused requirements breakdown to help you efficiently develop the healthcare translation web app within your deadline:
+
+---
+
+### **Project Requirements**
+
+#### **Objective**: 
+Develop a web-based, mobile-first prototype that enables real-time, multilingual translation between patients and healthcare providers. The app should convert spoken input into text, provide a live transcript, and offer a translated version with audio playback.
+
+---
+
+### **Core Functionalities**
+
+1. **Voice-to-Text (Speech Recognition)**:
+   - **Purpose**: Capture spoken input and convert it to text.
+   - **Implementation**: Use the **Web Speech API** or **Google Speech-to-Text API** for transcription.
+   - **Requirements**: Ensure accurate transcription, especially for medical terms.
+
+2. **Real-Time Translation**:
+   - **Purpose**: Translate the transcribed text into a selected target language.
+   - **Implementation**: Use **OpenAI API** (or another Generative AI translation API).
+   - **Requirements**: Provide near-instantaneous translation, handling common healthcare terms accurately.
+
+3. **Audio Playback of Translated Text**:
+   - **Purpose**: Enable audio playback of the translated text so users can hear it.
+   - **Implementation**: Use the **Web Speech API’s Speech Synthesis** feature for audio output.
+   - **Requirements**: Add a clear "Speak" button to trigger playback for translated text.
+
+---
+
+### **User Interface (UI)**
+
+1. **Mobile-First Design**:
+   - **Purpose**: Ensure the app is responsive and accessible on both mobile and desktop devices.
+   - **Requirements**: 
+     - Minimalistic, intuitive interface.
+     - Large, prominent buttons for easy interaction on small screens.
+
+2. **Main UI Components**:
+   - **Header Section**:
+     - **Elements**: App logo, language selection dropdowns (for both input and output languages).
+   - **Main Interaction Area**:
+     - **Elements**: 
+       - Large "Microphone" button to start voice input.
+       - Dual transcript display area for "Original Transcript" and "Translated Transcript" in real-time.
+       - "Speak" button to play the translated audio.
+   - **Error/Status Indicators**:
+     - Show indicators like “Listening,” “Translating,” or error messages if transcription or translation fails.
+
+---
+
+### **Technical Requirements**
+
+1. **Generative AI Tools**:
+   - **Translation**: Leverage **OpenAI API** for translation and handling medical terminology.
+   - **Coding Assistance**: Optionally use generative AI (like GitHub Copilot or ChatGPT) to speed up coding.
+
+2. **Speech Recognition API**:
+   - Use the **Web Speech API** for voice-to-text, or consider **Google Speech-to-Text** if higher accuracy is needed.
+
+3. **Data Privacy and Security**:
+   - **Purpose**: Ensure patient confidentiality, even if this is a prototype.
+   - **Requirements**: Include a basic disclaimer about patient confidentiality.
+
+4. **Deployment Platform**:
+   - Deploy the app on **Vercel** as a static site for simplicity and quick access.
+   - **Deliverable**: Provide a live link to the prototype on Vercel.
+
+---
+
+### **Testing & Quality Assurance**
+
+1. **Functional Testing**:
+   - **Purpose**: Ensure core functionalities (transcription, translation, and playback) work as expected.
+   - **Scenarios**: Test each feature separately, including transcription accuracy, translation quality, and audio playback.
+  
+2. **Error Handling**:
+   - **Purpose**: Handle potential API errors or connectivity issues gracefully.
+   - **Requirements**: Include error messages or fallbacks for transcription/translation failures.
+
+---
+
+### **Deliverables**
+
+1. **Prototype Link**:
+   - **Requirement**: Provide a live, accessible link to the deployed app on Vercel.
+
+2. **Code Documentation**:
+   - **Requirement**: Outline the code structure, explain how each API is used, and note any security considerations.
+
+3. **User Guide**:
+   - **Requirement**: A brief guide on how to use the app’s features (voice input, translation, audio playback).
+
+---
+
+### **Optional (If Time Allows)**
+
+- **Presentation**: Prepare a short explanation of your approach, covering:
+  - Key technical choices (e.g., why you used Next.js and selected specific APIs).
+  - How generative AI was used to accelerate development.
+  
+---
+
+This outline should help you stay focused on essential tasks and manage your time effectively.
