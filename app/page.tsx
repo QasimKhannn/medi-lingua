@@ -58,17 +58,11 @@ const Home: React.FC = () => {
       });
 
       const data = await response.json();
-
-      setTranslatedText(data.translatedText || 'Translation failed. Please try again.');
       const translated = data.translatedText || 'Translation failed. Please try again.';
-
       setTranslatedText(translated);
 
       // Store in session history
-      const newEntry = {
-        original: text,
-        translated,
-      };
+      const newEntry = { original: text, translated };
       const updatedHistory = [...sessionHistory, newEntry];
       setSessionHistory(updatedHistory);
       sessionStorage.setItem('sessionHistory', JSON.stringify(updatedHistory));
@@ -81,60 +75,59 @@ const Home: React.FC = () => {
     setTargetLanguage(e.target.value);
   };
 
-  const speakText = (text: string) => {
+  const speakText = (text: string): Promise<void> => {
+    console.log(filteredVoices)
+    return new Promise((resolve, reject) => {
+      const synth = window.speechSynthesis;
 
-    const synth = window.speechSynthesis;
-
-    // Check if voices are loaded
-    if (voices.length === 0) {
-      console.error('No voices available for speech synthesis.');
-      return;
-    }
-
-    if (!text.trim()) {
-      console.error('No text provided for speech synthesis.');
-      return;
-    }
-
-    const utterThis = new SpeechSynthesisUtterance(text);
-    utterThis.lang = targetLanguage; // Use selected language
-    utterThis.rate = 1;
-
-    const selectedVoice = voices.find(voice => voice.lang.startsWith(targetLanguage));
-    if (!selectedVoice) {
-      console.warn(`No voice found for language: ${targetLanguage}. Using default.`);
-    }
-    utterThis.voice = selectedVoice || voices[0]; // Fallback to first voice if none found
-
-    // Event listeners for speech events
-    utterThis.onstart = () => console.log("Speech has started");
-    utterThis.onend = () => console.log("Speech has ended");
-    utterThis.onerror = (event) => console.error("Speech synthesis error:", event.error);
-
-    // Speak the text
-    synth.speak(utterThis);
-  };
-
-
-  useEffect(() => {
-    const synth = window.speechSynthesis;
-
-    const populateVoiceList = () => {
-      const availableVoices = synth.getVoices();
-      if (availableVoices.length) {
-        setVoices(availableVoices);
-      } else {
-        setTimeout(populateVoiceList, 100); // Retry fetching voices
+      if (voices.length === 0) {
+        console.error('No voices available for speech synthesis.');
+        reject(new Error('No voices available.'));
+        return;
       }
-    };
 
-    populateVoiceList();
-    synth.onvoiceschanged = populateVoiceList;
+      if (!text.trim()) {
+        console.error('No text provided for speech synthesis.');
+        reject(new Error('No text provided.'));
+        return;
+      }
 
-    return () => {
-      synth.onvoiceschanged = null; // Clean up
-    };
-  }, []);
+      const utterThis = new SpeechSynthesisUtterance(text);
+      utterThis.lang = targetLanguage;
+      utterThis.rate = 1;
+
+      // Select voice and handle case where voice might not be available
+      const selectedVoice = voices.find(voice => voice.lang.startsWith(targetLanguage));
+
+      if (selectedVoice) {
+        utterThis.voice = selectedVoice;
+      } else {
+        console.warn(`No voice found for language: ${targetLanguage}. Using first available voice.`);
+        utterThis.voice = voices[0]; // Use the first available voice as a fallback
+      }
+
+      // Event listeners for speech events
+      utterThis.onstart = () => {
+        console.log("Speech has started");
+        resolve(); // Resolve the promise when speech starts
+      };
+
+      utterThis.onend = () => {
+        console.log("Speech has ended");
+        resolve(); // Resolve the promise when speech ends
+      };
+
+      utterThis.onerror = (event) => {
+        console.error("Speech synthesis error:", event.error);
+        reject(new Error(`Speech synthesis error: ${event.error}`)); // Reject the promise on error
+      };
+
+
+      // Cancel any ongoing speech before speaking new text
+      synth.cancel();
+      synth.speak(utterThis);
+    });
+  };
 
 
   return (
@@ -162,10 +155,7 @@ const Home: React.FC = () => {
 
         <h2 className="text-xl font-semibold mt-4">Translated Text:</h2>
         <p>{translatedText}</p>
-        <button onClick={() => {
-          console.log(filteredVoices)
-          speakText("problems hui hain")
-        }} className="mt-4 btn">
+        <button onClick={() => speakText(translatedText)} className="mt-4 btn">
           Speak Translated Text
         </button>
       </div>
