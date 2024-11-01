@@ -102,3 +102,28 @@ Develop a web-based, mobile-first prototype that enables real-time, multilingual
 ---
 
 This outline should help you stay focused on essential tasks and manage your time effectively.
+
+
+
+// pages/api/translate.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+});
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    const { text } = req.body;
+    try {
+        const response = await openai.chat.completions.create({
+            model: 'gpt-3.5-turbo',  // Use 'text-davinci-003' if you are not on GPT-3.5-turbo
+            messages: [{ role: 'user', content: `Translate this to Spanish: ${text}` }],
+        });
+
+        const translatedText = response.choices[0]?.message?.content;
+        res.status(200).json({ translatedText: translatedText?.trim() || '' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to translate text' });
+    }
+}

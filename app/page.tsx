@@ -1,101 +1,169 @@
-import Image from "next/image";
+"use client"; // Indicate this component should be rendered on the client side
+import { useEffect, useState } from 'react';
+import SpeechToText from '@/components/SpeechToText';
 
-export default function Home() {
+const Home: React.FC = () => {
+  const [transcript, setTranscript] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [targetLanguage, setTargetLanguage] = useState('es');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [filteredVoices, setFilteredVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+
+  const populateVoiceList = () => {
+    const synth = window.speechSynthesis;
+    const availableVoices = synth.getVoices();
+    if (availableVoices.length) {
+      setVoices(availableVoices);
+    } else {
+      setTimeout(populateVoiceList, 100); // Retry fetching voices
+    }
+  };
+
+  useEffect(() => {
+    populateVoiceList();
+    window.speechSynthesis.onvoiceschanged = populateVoiceList;
+
+    const history = sessionStorage.getItem('sessionHistory');
+    if (history) {
+      setSessionHistory(JSON.parse(history));
+    }
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null; // Clean up
+    };
+  }, []);
+
+  useEffect(() => {
+    const filtered = voices.filter(voice => voice.lang.startsWith(targetLanguage));
+    setFilteredVoices(filtered);
+  }, [voices, targetLanguage]);
+
+  const handleTranscribe = async (text: string) => {
+    setTranscript(text);
+
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text, targetLanguage }),
+      });
+
+      const data = await response.json();
+
+      setTranslatedText(data.translatedText || 'Translation failed. Please try again.');
+      const translated = data.translatedText || 'Translation failed. Please try again.';
+
+      setTranslatedText(translated);
+
+      // Store in session history
+      const newEntry = {
+        original: text,
+        translated,
+      };
+      const updatedHistory = [...sessionHistory, newEntry];
+      setSessionHistory(updatedHistory);
+      sessionStorage.setItem('sessionHistory', JSON.stringify(updatedHistory));
+    } catch {
+      setTranslatedText('Translation error occurred.');
+    }
+  };
+
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setTargetLanguage(e.target.value);
+  };
+
+  const speakText = (text: string) => {
+
+    const synth = window.speechSynthesis;
+
+    // Check if voices are loaded
+    if (voices.length === 0) {
+      console.error('No voices available for speech synthesis.');
+      return;
+    }
+
+    if (!text.trim()) {
+      console.error('No text provided for speech synthesis.');
+      return;
+    }
+
+    const utterThis = new SpeechSynthesisUtterance(text);
+    utterThis.lang = targetLanguage; // Use selected language
+    utterThis.rate = 1;
+
+    const selectedVoice = voices.find(voice => voice.lang.startsWith(targetLanguage));
+    if (!selectedVoice) {
+      console.warn(`No voice found for language: ${targetLanguage}. Using default.`);
+    }
+    utterThis.voice = selectedVoice || voices[0]; // Fallback to first voice if none found
+
+    // Event listeners for speech events
+    utterThis.onstart = () => console.log("Speech has started");
+    utterThis.onend = () => console.log("Speech has ended");
+    utterThis.onerror = (event) => console.error("Speech synthesis error:", event.error);
+
+    // Speak the text
+    synth.speak(utterThis);
+  };
+
+
+  useEffect(() => {
+    const synth = window.speechSynthesis;
+
+    const populateVoiceList = () => {
+      const availableVoices = synth.getVoices();
+      if (availableVoices.length) {
+        setVoices(availableVoices);
+      } else {
+        setTimeout(populateVoiceList, 100); // Retry fetching voices
+      }
+    };
+
+    populateVoiceList();
+    synth.onvoiceschanged = populateVoiceList;
+
+    return () => {
+      synth.onvoiceschanged = null; // Clean up
+    };
+  }, []);
+
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Healthcare Translation Web App</h1>
+      <div className="mb-4">
+        <label htmlFor="targetLanguage" className="block mb-2">Select Target Language:</label>
+        <select
+          id="targetLanguage"
+          value={targetLanguage}
+          onChange={handleLanguageChange}
+          className="border p-2 rounded bg-black"
+        >
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="zh">Chinese</option>
+        </select>
+      </div>
+      <SpeechToText onTranscribe={handleTranscribe} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <div className="mt-4">
+        <h2 className="text-xl font-semibold">Original Transcript:</h2>
+        <p>{transcript}</p>
+
+        <h2 className="text-xl font-semibold mt-4">Translated Text:</h2>
+        <p>{translatedText}</p>
+        <button onClick={() => {
+          speakText("problems hui hain")
+        }} className="mt-4 btn">
+          Speak Translated Text
+        </button>
+      </div>
     </div>
   );
-}
+};
+
+export default Home;
