@@ -1,20 +1,23 @@
-"use client"; // Indicate this component should be rendered on the client side
+"use client";
 import { useCallback, useEffect, useState } from 'react';
 import SpeechToText from '@/components/SpeechToText';
+import InputLangsData from "@/data/input-lang.json"
+import OutputLangsData from "@/data/output-lang.json"
+import { updateSessionRecords } from '@/utils/session';
 export const dynamic = "force-dynamic";
 
-interface SessionEntry {
-  original: string;
-  translated: string;
+interface TranslationRecord {
+  transcription: string;
+  translation: string;
 }
 
 const Home: React.FC = () => {
   const [transcript, setTranscript] = useState('');
   const [translatedText, setTranslatedText] = useState('');
-  const [targetLanguage, setTargetLanguage] = useState('es');
+  const [inputLang, setInputLang] = useState('en')
+  const [outputLang, setOutputLang] = useState('en');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [filteredVoices, setFilteredVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [sessionHistory, setSessionHistory] = useState<SessionEntry[]>([]);
 
   const populateVoiceList = useCallback(() => {
     const synth = window.speechSynthesis;
@@ -22,28 +25,10 @@ const Home: React.FC = () => {
     if (availableVoices.length) {
       setVoices(availableVoices);
     } else {
-      setTimeout(populateVoiceList, 100); // Retry fetching voices
+      setTimeout(populateVoiceList, 100);
     }
   }, []);
 
-  useEffect(() => {
-    populateVoiceList();
-    window.speechSynthesis.onvoiceschanged = populateVoiceList;
-
-    const history = sessionStorage.getItem('sessionHistory');
-    if (history) {
-      setSessionHistory(JSON.parse(history));
-    }
-
-    return () => {
-      window.speechSynthesis.onvoiceschanged = null; // Clean up
-    };
-  }, [populateVoiceList]);
-
-  useEffect(() => {
-    const filtered = voices.filter(voice => voice.lang.startsWith(targetLanguage));
-    setFilteredVoices(filtered);
-  }, [voices, targetLanguage]);
 
   const handleTranscribe = async (text: string) => {
     setTranscript(text);
@@ -51,32 +36,30 @@ const Home: React.FC = () => {
     try {
       const response = await fetch('/api/translate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text, targetLanguage }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, targetLanguage: outputLang }),
       });
 
       const data = await response.json();
       const translated = data.translatedText || 'Translation failed. Please try again.';
       setTranslatedText(translated);
 
-      // Store in session history
-      const newEntry = { original: text, translated };
-      const updatedHistory = [...sessionHistory, newEntry];
-      setSessionHistory(updatedHistory);
-      sessionStorage.setItem('sessionHistory', JSON.stringify(updatedHistory));
+      updateSessionRecords({ transcription: text, translation: translated });
+
     } catch {
       setTranslatedText('Translation error occurred.');
     }
   };
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setTargetLanguage(e.target.value);
+  const handleOutputLang = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setOutputLang(e.target.value);
+  };
+
+  const handleInputLang = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setInputLang(e.target.value);
   };
 
   const speakText = (text: string): Promise<void> => {
-    console.log(filteredVoices)
     return new Promise((resolve, reject) => {
       const synth = window.speechSynthesis;
 
@@ -93,71 +76,121 @@ const Home: React.FC = () => {
       }
 
       const utterThis = new SpeechSynthesisUtterance(text);
-      utterThis.lang = targetLanguage;
+      utterThis.lang = outputLang;
       utterThis.rate = 1;
 
-      // Select voice and handle case where voice might not be available
-      const selectedVoice = voices.find(voice => voice.lang.startsWith(targetLanguage));
+      const selectedVoice = filteredVoices.find(voice => voice.lang.startsWith(outputLang));
 
       if (selectedVoice) {
         utterThis.voice = selectedVoice;
       } else {
-        console.warn(`No voice found for language: ${targetLanguage}. Using first available voice.`);
-        utterThis.voice = voices[0]; // Use the first available voice as a fallback
+        console.warn(`No voice found for language: ${outputLang}. Using first available voice.`);
+        utterThis.voice = filteredVoices[0];
       }
 
-      // Event listeners for speech events
-      utterThis.onstart = () => {
-        console.log("Speech has started");
-        resolve(); // Resolve the promise when speech starts
-      };
-
+      utterThis.onstart = () => console.log("Speech has started");
       utterThis.onend = () => {
         console.log("Speech has ended");
-        resolve(); // Resolve the promise when speech ends
+        resolve();
       };
-
       utterThis.onerror = (event) => {
         console.error("Speech synthesis error:", event.error);
-        reject(new Error(`Speech synthesis error: ${event.error}`)); // Reject the promise on error
+        reject(new Error(`Speech synthesis error: ${event.error}`))
       };
 
-
-      // Cancel any ongoing speech before speaking new text
       synth.cancel();
       synth.speak(utterThis);
     });
   };
 
+  useEffect(() => {
+    populateVoiceList();
+    window.speechSynthesis.onvoiceschanged = populateVoiceList;
+
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, [populateVoiceList]);
+
+  useEffect(() => {
+    const filtered = voices.filter(voice => voice.lang.startsWith(outputLang));
+    setFilteredVoices(filtered);
+  }, [voices, outputLang]);
+
+  useEffect(() => {
+    // This effect will only run in the browser
+    if (typeof window !== 'undefined') {
+      const savedRecords = JSON.parse(sessionStorage.getItem('translationRecords') || '[]');
+      if (savedRecords.length) {
+        console.log("Session Translation Records:", savedRecords); // Display them as needed in your UI
+      }
+    }
+  }, []);
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Healthcare Translation Web App</h1>
-      <div className="mb-4">
-        <label htmlFor="targetLanguage" className="block mb-2">Select Target Language:</label>
-        <select
-          id="targetLanguage"
-          value={targetLanguage}
-          onChange={handleLanguageChange}
-          className="border p-2 rounded bg-black"
-        >
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
-          <option value="de">German</option>
-          <option value="zh">Chinese</option>
-        </select>
+    <div className='grid grid-cols-4 w-full'>
+      <div className="w-[95%] p-6 max-w-lg mx-auto space-y-6 bg-gray-50 shadow-md rounded-md col-span-4 md:col-span-2">
+        <h1 className="text-3xl font-bold text-gray-800">Healthcare Translator</h1>
+        <SpeechToText onTranscribe={handleTranscribe} inputLang={inputLang} />
+        <div className="w-full space-y-4">
+          <div>
+            <div className="w-full">
+              <label htmlFor="inputLang" className="block text-sm font-semibold text-gray-600">
+                Input Language
+              </label>
+              <select
+                id="inputLang"
+                value={inputLang}
+                onChange={handleInputLang}
+                className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                {InputLangsData.map((ipl, index) => {
+                  return (
+                    <option value={ipl.value} key={index}>{ipl.label}</option>
+                  )
+                })}
+              </select>
+            </div>
+            <p className="p-2 mt-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">{transcript ? transcript : "Transcription.."}</p>
+          </div>
+          <div>
+            <div className="w-full">
+              <label htmlFor="outputLang" className="block text-sm font-semibold text-gray-600">
+                Output Language
+              </label>
+              <select
+                id="outputLang"
+                value={outputLang}
+                onChange={handleOutputLang}
+                className="block w-full p-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                {OutputLangsData.map((opl, index) => {
+                  return (
+                    <option value={opl.value} key={index}>{opl.label}</option>
+                  )
+                })}
+              </select>
+            </div>
+            <p className="p-2 my-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">{translatedText ? translatedText : "Translation.."}</p>
+          </div>
+          <button
+            onClick={() => speakText(translatedText)}
+            className="w-full px-4 py-2 mt-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          >
+            Speak Translation
+          </button>
+        </div>
       </div>
-      <SpeechToText onTranscribe={handleTranscribe} />
-
-      <div className="mt-4">
-        <h2 className="text-xl font-semibold">Original Transcript:</h2>
-        <p>{transcript}</p>
-
-        <h2 className="text-xl font-semibold mt-4">Translated Text:</h2>
-        <p>{translatedText}</p>
-        <button onClick={() => speakText(translatedText)} className="mt-4 btn">
-          Speak Translated Text
-        </button>
+      <div className="flex flex-col history-section md:col-span-2 col-span-4 justify-center items-center">
+        <h2 className="text-xl font-semibold text-gray-300">Translation History</h2>
+        <ul className='w-[80%]'>
+          {typeof window !== 'undefined' && JSON.parse(sessionStorage.getItem('translationRecords') || '[]').map((record: TranslationRecord, index: number) => (
+            <li key={index} className="p-2 mt-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">
+              <p><strong>Transcription:</strong> {record.transcription}</p>
+              <p><strong>Translation:</strong> {record.translation}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

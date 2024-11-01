@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
     const { text, targetLanguage } = await request.json();
-    console.log('Received text:', text);
-    console.log('Received targetLanguage:', targetLanguage);
+    // console.log('Received text:', text);
+    // console.log('Received targetLanguage:', targetLanguage);
 
     // Validate input
     if (!text || typeof text !== 'string') {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         );
 
         const data = await response.json();
-        console.log("DATAAAA", data)
+        // console.log("DATAAAA", data)
         if (data.data && data.data.translations && data.data.translations[0].translatedText) {
             return NextResponse.json({ translatedText: data.data.translations[0].translatedText }, { status: 200 });
         } else {

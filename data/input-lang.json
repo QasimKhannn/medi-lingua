@@ -1,0 +1,154 @@
+[
+    {
+        "value": "en-US",
+        "label": "English (United States)"
+    },
+    {
+        "value": "es-ES",
+        "label": "Spanish (Spain)"
+    },
+    {
+        "value": "fr-FR",
+        "label": "French (France)"
+    },
+    {
+        "value": "de-DE",
+        "label": "German (Germany)"
+    },
+    {
+        "value": "zh-CN",
+        "label": "Chinese (Mandarin, Simplified)"
+    },
+    {
+        "value": "hi-IN",
+        "label": "Hindi (India)"
+    },
+    {
+        "value": "ar-SA",
+        "label": "Arabic (Saudi Arabia)"
+    },
+    {
+        "value": "ru-RU",
+        "label": "Russian (Russia)"
+    },
+    {
+        "value": "ja-JP",
+        "label": "Japanese (Japan)"
+    },
+    {
+        "value": "ko-KR",
+        "label": "Korean (South Korea)"
+    },
+    {
+        "value": "pt-BR",
+        "label": "Portuguese (Brazil)"
+    },
+    {
+        "value": "it-IT",
+        "label": "Italian (Italy)"
+    },
+    {
+        "value": "pl-PL",
+        "label": "Polish (Poland)"
+    },
+    {
+        "value": "tr-TR",
+        "label": "Turkish (Turkey)"
+    },
+    {
+        "value": "sv-SE",
+        "label": "Swedish (Sweden)"
+    },
+    {
+        "value": "he-IL",
+        "label": "Hebrew (Israel)"
+    },
+    {
+        "value": "th-TH",
+        "label": "Thai (Thailand)"
+    },
+    {
+        "value": "vi-VN",
+        "label": "Vietnamese (Vietnam)"
+    },
+    {
+        "value": "id-ID",
+        "label": "Indonesian (Indonesia)"
+    },
+    {
+        "value": "ms-MY",
+        "label": "Malay (Malaysia)"
+    },
+    {
+        "value": "tl-PH",
+        "label": "Tagalog (Philippines)"
+    },
+    {
+        "value": "fa-IR",
+        "label": "Persian (Iran)"
+    },
+    {
+        "value": "el-GR",
+        "label": "Greek (Greece)"
+    },
+    {
+        "value": "uk-UA",
+        "label": "Ukrainian (Ukraine)"
+    },
+    {
+        "value": "bn-IN",
+        "label": "Bengali (India)"
+    },
+    {
+        "value": "ta-IN",
+        "label": "Tamil (India)"
+    },
+    {
+        "value": "te-IN",
+        "label": "Telugu (India)"
+    },
+    {
+        "value": "mr-IN",
+        "label": "Marathi (India)"
+    },
+    {
+        "value": "gu-IN",
+        "label": "Gujarati (India)"
+    },
+    {
+        "value": "pa-IN",
+        "label": "Punjabi (India)"
+    },
+    {
+        "value": "ur-PK",
+        "label": "Urdu (Pakistan)"
+    },
+    {
+        "value": "ro-RO",
+        "label": "Romanian (Romania)"
+    },
+    {
+        "value": "cs-CZ",
+        "label": "Czech (Czech Republic)"
+    },
+    {
+        "value": "hu-HU",
+        "label": "Hungarian (Hungary)"
+    },
+    {
+        "value": "sk-SK",
+        "label": "Slovak (Slovakia)"
+    },
+    {
+        "value": "sr-RS",
+        "label": "Serbian (Serbia)"
+    },
+    {
+        "value": "bg-BG",
+        "label": "Bulgarian (Bulgaria)"
+    },
+    {
+        "value": "hr-HR",
+        "label": "Croatian (Croatia)"
+    }
+]
