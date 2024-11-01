@@ -1,5 +1,6 @@
 // pages/api/translate.ts
 import { NextResponse } from 'next/server';
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
     const { text, targetLanguage } = await request.json();
@@ -37,6 +38,6 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Translation failed' }, { status: 500 });
         }
     } catch (error) {
-        return NextResponse.json({ error: 'Translation error occurred' }, { status: 500 });
+        return NextResponse.json({ error: `Translation error occurred ${error}` }, { status: 500 });
     }
 }

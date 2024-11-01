@@ -1,10 +1,28 @@
 "use client"
 // components/SpeechToText.tsx
 import { useState } from 'react';
+export const dynamic = "force-dynamic";
 
 interface SpeechToTextProps {
     onTranscribe: (transcript: string) => void;
 }
+
+interface SpeechRecognitionError extends Event {
+    error: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+    lang: string;
+    interimResults: boolean;
+    maxAlternatives: number;
+    start: () => void;
+    stop: () => void;
+    onstart: () => void;
+    onend: () => void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: Event) => void;
+}
+
 
 const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe }) => {
     const [isListening, setIsListening] = useState(false);
@@ -17,7 +35,7 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe }) => {
         }
 
         setError(null);
-        const recognition = new (window as any).webkitSpeechRecognition();
+        const recognition = new (window as { webkitSpeechRecognition: new () => SpeechRecognition }).webkitSpeechRecognition()
         recognition.lang = 'en-US';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
@@ -30,8 +48,9 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe }) => {
             onTranscribe(transcript);
         };
 
-        recognition.onerror = (event: any) => {
-            setError(`Speech recognition error: ${event.error}`);
+        recognition.onerror = (event) => {
+            const speechError = event as SpeechRecognitionError; // Type assertion here
+            setError(`Speech recognition error: ${speechError.error}`);
         };
 
         recognition.start();

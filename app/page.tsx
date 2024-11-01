@@ -1,6 +1,12 @@
 "use client"; // Indicate this component should be rendered on the client side
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import SpeechToText from '@/components/SpeechToText';
+export const dynamic = "force-dynamic";
+
+interface SessionEntry {
+  original: string;
+  translated: string;
+}
 
 const Home: React.FC = () => {
   const [transcript, setTranscript] = useState('');
@@ -8,9 +14,9 @@ const Home: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState('es');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [filteredVoices, setFilteredVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [sessionHistory, setSessionHistory] = useState<SessionEntry[]>([]);
 
-  const populateVoiceList = () => {
+  const populateVoiceList = useCallback(() => {
     const synth = window.speechSynthesis;
     const availableVoices = synth.getVoices();
     if (availableVoices.length) {
@@ -18,7 +24,7 @@ const Home: React.FC = () => {
     } else {
       setTimeout(populateVoiceList, 100); // Retry fetching voices
     }
-  };
+  }, []);
 
   useEffect(() => {
     populateVoiceList();
@@ -32,7 +38,7 @@ const Home: React.FC = () => {
     return () => {
       window.speechSynthesis.onvoiceschanged = null; // Clean up
     };
-  }, []);
+  }, [populateVoiceList]);
 
   useEffect(() => {
     const filtered = voices.filter(voice => voice.lang.startsWith(targetLanguage));
@@ -157,6 +163,7 @@ const Home: React.FC = () => {
         <h2 className="text-xl font-semibold mt-4">Translated Text:</h2>
         <p>{translatedText}</p>
         <button onClick={() => {
+          console.log(filteredVoices)
           speakText("problems hui hain")
         }} className="mt-4 btn">
           Speak Translated Text
