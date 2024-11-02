@@ -28,7 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="h-screen w-screen flex items-center bg-gray-100 dark:bg-gray-900">
+        <div className="md:h-[100vh] py-5 md:py-0 h-screen w-screen flex items-start md:items-center bg-gray-100 dark:bg-gray-900">
           {children}
         </div>
       </body>

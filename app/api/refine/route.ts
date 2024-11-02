@@ -18,7 +18,6 @@ export async function POST(request: Request) {
         const correctedText = result.response.text() || text;
 
         if (correctedText.trim() !== text.trim()) {
-            console.log("first", correctedText)
             return NextResponse.json({ correctedText }, { status: 200 });
         } else {
             return NextResponse.json({}, { status: 204 });

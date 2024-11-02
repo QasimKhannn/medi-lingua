@@ -1,14 +1,25 @@
 "use client";
 import { useCallback, useEffect, useState } from 'react';
-import SpeechToText from '@/components/SpeechToText';
+// export const dynamic = "force-dynamic";
+import dynamic from 'next/dynamic';
+const SpeechToText = dynamic(() => import('@/components/SpeechToText'), {
+  ssr: false, // This will disable server-side rendering for this component
+});
+const SpeakingLoader = dynamic(() => import('@/components/loaders/speaking'), {
+  ssr: false, // This will disable server-side rendering for this component
+});
 import InputLangsData from "@/data/input-lang.json"
 import OutputLangsData from "@/data/output-lang.json"
 import { updateSessionRecords } from '@/utils/session';
-export const dynamic = "force-dynamic";
+import { CirclePlay } from 'lucide-react';
+import { format } from "date-fns"
 
-interface TranslationRecord {
+export interface TranslationRecord {
   transcription: string;
   translation: string;
+  timestamp: string;
+  outputLang: string;
+  inputLang: string;
 }
 
 const Home: React.FC = () => {
@@ -18,6 +29,9 @@ const Home: React.FC = () => {
   const [outputLang, setOutputLang] = useState('en');
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [filteredVoices, setFilteredVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const populateVoiceList = useCallback(() => {
     const synth = window.speechSynthesis;
@@ -44,7 +58,15 @@ const Home: React.FC = () => {
       const translated = data.translatedText || 'Translation failed. Please try again.';
       setTranslatedText(translated);
 
-      updateSessionRecords({ transcription: text, translation: translated });
+      const record: TranslationRecord = {
+        transcription: text,
+        translation: translated,
+        timestamp: format(new Date(), 'h:mm a'),
+        outputLang: outputLang,
+        inputLang: outputLang,
+      };
+
+      updateSessionRecords(record);
 
     } catch {
       setTranslatedText('Translation error occurred.');
@@ -59,7 +81,7 @@ const Home: React.FC = () => {
     setInputLang(e.target.value);
   };
 
-  const speakText = (text: string): Promise<void> => {
+  const speakText = (text: string, index?: number, passedLang?: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const synth = window.speechSynthesis;
 
@@ -71,12 +93,15 @@ const Home: React.FC = () => {
 
       if (!text.trim()) {
         console.error('No text provided for speech synthesis.');
+        setError('Press mic and speak, before listening to translation.');
         reject(new Error('No text provided.'));
         return;
       }
 
+      synth.cancel();
+
       const utterThis = new SpeechSynthesisUtterance(text);
-      utterThis.lang = outputLang;
+      utterThis.lang = passedLang ? passedLang : outputLang;
       utterThis.rate = 1;
 
       const selectedVoice = filteredVoices.find(voice => voice.lang.startsWith(outputLang));
@@ -85,12 +110,20 @@ const Home: React.FC = () => {
         utterThis.voice = selectedVoice;
       } else {
         console.warn(`No voice found for language: ${outputLang}. Using first available voice.`);
-        utterThis.voice = filteredVoices[0];
+        utterThis.voice = voices[0];
       }
 
-      utterThis.onstart = () => console.log("Speech has started");
+      utterThis.onstart = () => {
+        if (index === undefined) {
+          setIsSpeaking(true);
+        }
+        if (index !== undefined) {
+          setPlayingIndex(index); // Update playing state
+        }
+      };
       utterThis.onend = () => {
-        console.log("Speech has ended");
+        setIsSpeaking(false);
+        setPlayingIndex(null); // Reset playing state
         resolve();
       };
       utterThis.onerror = (event) => {
@@ -98,9 +131,17 @@ const Home: React.FC = () => {
         reject(new Error(`Speech synthesis error: ${event.error}`))
       };
 
-      synth.cancel();
       synth.speak(utterThis);
     });
+  };
+
+  const handleSpeakTranslation = () => {
+    if (!translatedText.trim()) {
+      setError('Press mic and speak, before listening to translation.');
+    } else {
+      setError(null); // Clear error if there's text
+      speakText(translatedText);
+    }
   };
 
   useEffect(() => {
@@ -122,15 +163,15 @@ const Home: React.FC = () => {
     if (typeof window !== 'undefined') {
       const savedRecords = JSON.parse(sessionStorage.getItem('translationRecords') || '[]');
       if (savedRecords.length) {
-        console.log("Session Translation Records:", savedRecords); // Display them as needed in your UI
       }
     }
   }, []);
 
   return (
     <div className='grid grid-cols-4 w-full'>
-      <div className="w-[95%] p-6 max-w-lg mx-auto space-y-6 bg-gray-50 shadow-md rounded-md col-span-4 md:col-span-2">
-        <h1 className="text-3xl font-bold text-gray-800">Healthcare Translator</h1>
+      <div className="w-[92%] p-6 max-w-lg mx-auto space-y-6 bg-gray-50 shadow-md rounded-md col-span-4 md:col-span-2">
+        <p className="text-3xl font-extrabold text-gray-800">Medi Lingua</p>
+        <p className="text-sm font-bold text-gray-700">Healthcare Translation Web App with Generative AI</p>
         <SpeechToText onTranscribe={handleTranscribe} inputLang={inputLang} />
         <div className="w-full space-y-4">
           <div>
@@ -151,7 +192,7 @@ const Home: React.FC = () => {
                 })}
               </select>
             </div>
-            <p className="p-2 mt-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">{transcript ? transcript : "Transcription.."}</p>
+            <p className="p-2 mt-2 text-gray-900 bg-gray-200 rounded-md shadow-inner text-sm">{transcript ? transcript : "Transcription.."}</p>
           </div>
           <div>
             <div className="w-full">
@@ -171,24 +212,57 @@ const Home: React.FC = () => {
                 })}
               </select>
             </div>
-            <p className="p-2 my-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">{translatedText ? translatedText : "Translation.."}</p>
+            <p className="p-2 my-2 text-sm text-gray-900 bg-gray-200 rounded-md shadow-inner max-h-24 overflow-y-auto">{translatedText ? translatedText : "Translation.."}</p>
           </div>
           <button
-            onClick={() => speakText(translatedText)}
-            className="w-full px-4 py-2 mt-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            onClick={handleSpeakTranslation}
+            className="w-full px-4 py-2 mt-2 text-white flex justify-center items-center bg-blue-600 rounded-md hover:bg-blue-700"
           >
-            Speak Translation
+            {isSpeaking ? (
+              <div className='h-5 flex justify-center items-center'>
+                <SpeakingLoader color='white' />
+              </div>
+            ) : (
+              <span className='flex flex-row gap-3 justify-center items-center'>
+                Speak Translation
+                <CirclePlay
+                  size={20}
+                  color='white'
+                  className='cursor-pointer'
+                />
+              </span>
+            )}
           </button>
+          {error && <p className="text-red-500">{error}</p>}
         </div>
       </div>
-      <div className="flex flex-col history-section md:col-span-2 col-span-4 justify-center items-center">
+      <div className="p-3 max-w-lg mx-auto space-y-6 shadow-md rounded-md col-span-4 md:col-span-2">
         <h2 className="text-xl font-semibold text-gray-300">Translation History</h2>
-        <ul className='w-[80%]'>
+        <ul className='w-96 max-h-[15rem] md:max-h-[28rem] overflow-y-auto px-2'>
           {typeof window !== 'undefined' && JSON.parse(sessionStorage.getItem('translationRecords') || '[]').map((record: TranslationRecord, index: number) => (
-            <li key={index} className="p-2 mt-2 text-gray-900 bg-gray-200 rounded-md shadow-inner">
-              <p><strong>Transcription:</strong> {record.transcription}</p>
-              <p><strong>Translation:</strong> {record.translation}</p>
-            </li>
+            <div className=' p-2 mt-2 grid grid-cols-12 rounded-md shadow-inner bg-gray-200' key={index}>
+              <div className='col-span-10'>
+                <li key={index} className="text-gray-900">
+                  <p className='text-sm'><strong>Me({record.inputLang}):</strong> {record.transcription}</p>
+                  <p className='text-sm'><strong>Translation({record.outputLang}):</strong> {record.translation}</p>
+                </li>
+              </div>
+              <div className='col-span-2 flex justify-end flex-col items-end gap-2'>
+                <p className='text-[10px] text-gray-500'>{record.timestamp}</p>
+                {playingIndex === index ? (
+                  <div className='h-5'>
+                    <SpeakingLoader color='red' />
+                  </div>
+                ) : (
+                  <CirclePlay
+                    size={20}
+                    color='blue'
+                    className='cursor-pointer'
+                    onClick={() => speakText(record.translation, index)}
+                  />
+                )}
+              </div>
+            </div>
           ))}
         </ul>
       </div>

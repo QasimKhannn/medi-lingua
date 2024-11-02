@@ -1,8 +1,11 @@
 // components/SpeechToText.tsx
 "use client";
+import { Mic } from 'lucide-react';
 import { useState } from 'react';
-
+import { ping } from 'ldrs'
 export const dynamic = "force-dynamic";
+
+ping.register()
 
 interface SpeechToTextProps {
     onTranscribe: (transcript: string) => void;
@@ -46,7 +49,6 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe, inputLang }) 
 
         recognition.onresult = async (event: SpeechRecognitionEvent) => {
             const transcript = event.results[0][0].transcript;
-            console.log("Transcribed Text: ", transcript); // Debugging line
 
             // Pass to AI for refinement
             const refinedText = await refineText(transcript);
@@ -81,7 +83,6 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe, inputLang }) 
             }
 
             const data = await response.json();
-            console.log("Refined Data: ", data.correctedText); // Debugging line
             return data.correctedText; // Assuming your API returns refinedText in the response
 
         } catch (error) {
@@ -96,11 +97,18 @@ const SpeechToText: React.FC<SpeechToTextProps> = ({ onTranscribe, inputLang }) 
                 onClick={startListening}
                 disabled={isListening}
                 className={`flex items-center justify-center w-20 h-20 rounded-full transition-transform duration-200 
-                      ${isListening ? "bg-red-500 animate-pulse scale-110" : "bg-blue-500 hover:bg-blue-600"}`}
+                      ${isListening ? "bg-red-400 animate-pulse scale-110" : "bg-blue-500 hover:bg-blue-600"}`}
             >
-                🎤
+                {isListening ? (
+                    <l-ping
+                        size="70"
+                        speed="1.5"
+                        color="white"
+                    ></l-ping>
+                ) : (
+                    <Mic size={50} color='white' />
+                )}
             </button>
-            {isListening && <p className="text-blue-500 font-medium">Listening...</p>}
             {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
         </div>
     );

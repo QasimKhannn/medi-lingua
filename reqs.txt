@@ -1,95 +1,53 @@
-Here's a simplified and focused requirements breakdown to help you efficiently develop the healthcare translation web app within your deadline:
-
----
-
-### **Project Requirements**
-
-#### **Objective**: 
-Develop a web-based, mobile-first prototype that enables real-time, multilingual translation between patients and healthcare providers. The app should convert spoken input into text, provide a live transcript, and offer a translated version with audio playback.
-
----
 
 ### **Core Functionalities**
 
 1. **Voice-to-Text (Speech Recognition)**:
-   - **Purpose**: Capture spoken input and convert it to text.
-   - **Implementation**: Use the **Web Speech API** or **Google Speech-to-Text API** for transcription.
-   - **Requirements**: Ensure accurate transcription, especially for medical terms.
+   - **Purpose**: Capture spoken input and convert it to text._____DONE
+   Using Web Speech Api and Gemini(corrects grammar)_____DONE
 
 2. **Real-Time Translation**:
-   - **Purpose**: Translate the transcribed text into a selected target language.
-   - **Implementation**: Use **OpenAI API** (or another Generative AI translation API).
-   - **Requirements**: Provide near-instantaneous translation, handling common healthcare terms accurately.
+   -refined translation with gemini_____DONE
+   - Google translate_____DONE
 
 3. **Audio Playback of Translated Text**:
-   - **Purpose**: Enable audio playback of the translated text so users can hear it.
-   - **Implementation**: Use the **Web Speech API’s Speech Synthesis** feature for audio output.
-   - **Requirements**: Add a clear "Speak" button to trigger playback for translated text.
+   - **Purpose**: Enable audio playback of the translated text so users can hear it._____DONE
+   - **Implementation**: Use the **Web Speech API’s Speech Synthesis** feature for audio output._____DONE
+   - **Requirements**: Add a clear "Speak" button to trigger playback for translated text._____DONE
 
 ---
 
 ### **User Interface (UI)**
 
 1. **Mobile-First Design**:
-   - **Purpose**: Ensure the app is responsive and accessible on both mobile and desktop devices.
+   - **Purpose**: Ensure the app is responsive and accessible on both mobile and desktop devices._____PEND
    - **Requirements**: 
      - Minimalistic, intuitive interface.
      - Large, prominent buttons for easy interaction on small screens.
 
 2. **Main UI Components**:
    - **Header Section**:
-     - **Elements**: App logo, language selection dropdowns (for both input and output languages).
+     - **Elements**: App logo, language selection dropdowns (for both input and output languages)._____DONE
    - **Main Interaction Area**:
      - **Elements**: 
-       - Large "Microphone" button to start voice input.
-       - Dual transcript display area for "Original Transcript" and "Translated Transcript" in real-time.
-       - "Speak" button to play the translated audio.
+       - Large "Microphone" button to start voice input._____DONE
+       - Dual transcript display area for "Original Transcript" and "Translated Transcript" in real-time._____DONE
+       - "Speak" button to play the translated audio._____DONE
    - **Error/Status Indicators**:
-     - Show indicators like “Listening,” “Translating,” or error messages if transcription or translation fails.
+     - Show indicators like “Listening,” “Translating,” or error messages if transcription or translation fails._____DONE
 
 ---
 
-### **Technical Requirements**
-
-1. **Generative AI Tools**:
-   - **Translation**: Leverage **OpenAI API** for translation and handling medical terminology.
-   - **Coding Assistance**: Optionally use generative AI (like GitHub Copilot or ChatGPT) to speed up coding.
-
-2. **Speech Recognition API**:
-   - Use the **Web Speech API** for voice-to-text, or consider **Google Speech-to-Text** if higher accuracy is needed.
-
-3. **Data Privacy and Security**:
-   - **Purpose**: Ensure patient confidentiality, even if this is a prototype.
-   - **Requirements**: Include a basic disclaimer about patient confidentiality.
-
-4. **Deployment Platform**:
-   - Deploy the app on **Vercel** as a static site for simplicity and quick access.
-   - **Deliverable**: Provide a live link to the prototype on Vercel.
-
----
-
-### **Testing & Quality Assurance**
-
-1. **Functional Testing**:
-   - **Purpose**: Ensure core functionalities (transcription, translation, and playback) work as expected.
-   - **Scenarios**: Test each feature separately, including transcription accuracy, translation quality, and audio playback.
-  
-2. **Error Handling**:
-   - **Purpose**: Handle potential API errors or connectivity issues gracefully.
-   - **Requirements**: Include error messages or fallbacks for transcription/translation failures.
-
----
 
 ### **Deliverables**
 
 1. **Prototype Link**:
-   - **Requirement**: Provide a live, accessible link to the deployed app on Vercel.
+   - **Requirement**: Provide a live, accessible link to the deployed app on Vercel._____DONE
 
 2. **Code Documentation**:
-   - **Requirement**: Outline the code structure, explain how each API is used, and note any security considerations.
+   - **Requirement**: Outline the code structure, explain how each API is used, and note any security considerations._____PEND
 
 3. **User Guide**:
-   - **Requirement**: A brief guide on how to use the app’s features (voice input, translation, audio playback).
+   - **Requirement**: A brief guide on how to use the app’s features (voice input, translation, audio playback)._____DONE
 
 ---
 
@@ -102,28 +60,3 @@ Develop a web-based, mobile-first prototype that enables real-time, multilingual
 ---
 
 This outline should help you stay focused on essential tasks and manage your time effectively.
-
-
-
-// pages/api/translate.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY!,
-});
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    const { text } = req.body;
-    try {
-        const response = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',  // Use 'text-davinci-003' if you are not on GPT-3.5-turbo
-            messages: [{ role: 'user', content: `Translate this to Spanish: ${text}` }],
-        });
-
-        const translatedText = response.choices[0]?.message?.content;
-        res.status(200).json({ translatedText: translatedText?.trim() || '' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to translate text' });
-    }
-}
