@@ -258,7 +258,7 @@ const Home: React.FC = () => {
                     size={20}
                     color='blue'
                     className='cursor-pointer'
-                    onClick={() => speakText(record.translation, index)}
+                    onClick={() => speakText(record.translation, index, record.outputLang)}
                   />
                 )}
               </div>
